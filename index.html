@@ -386,22 +386,63 @@ if (window.TRAINER_TITLE) {
 }
 // ─────────────────────────────────────────────
 
-// ── Normalise a typed name for comparison ──
-function norm(s) {
-  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+// ── Name matching: diacritic-folding + typo-tolerant ──
+// Fold accents, lowercase, turn punctuation/apostrophes/hyphens into spaces.
+// "Wyatt Tessari L'Allié" -> "wyatt tessari l allie"
+function fold(s) {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')   // strip combining accent marks
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')       // any punctuation/symbol -> space
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-// Accept if typed name is a substring match on any token of the full name,
-// or if the full typed string matches the full name.
+// Levenshtein edit distance.
+function lev(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+// Allowed typos scale with length; very short tokens must be exact.
+function withinTypo(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (Math.min(a.length, b.length) < 3) return false; // no fuzzy on tiny tokens
+  const len = Math.max(a.length, b.length);
+  const tol = len <= 5 ? 1 : len <= 9 ? 2 : 3;
+  return lev(a, b) <= tol;
+}
+
+// Accept the typed answer if it matches the full name, the first or last name,
+// or first+last (ignoring middles) — each comparison both as-typed and with all
+// spaces removed (so "Zhi jing" == "Zhijing"), with typo tolerance throughout.
 function isCorrect(typed, fullName) {
-  const t = norm(typed);
-  const f = norm(fullName);
+  const t = fold(typed);
   if (!t) return false;
-  // exact full name
-  if (t === f) return true;
-  // any single word of the full name (first name, last name)
-  const parts = f.split(' ');
-  return parts.some(p => p === t);
+  const f = fold(fullName);
+  if (!f) return false;
+
+  const tJoin = t.replace(/ /g, '');
+  const matches = (cand) => withinTypo(t, cand) || withinTypo(tJoin, cand.replace(/ /g, ''));
+
+  if (matches(f)) return true;                       // whole name
+  const parts = f.split(' ').filter(Boolean);
+  if (parts.some(matches)) return true;              // any single part (first/last/middle)
+  if (parts.length >= 2 && matches(parts[0] + ' ' + parts[parts.length - 1])) return true; // first+last
+  return false;
 }
 
 // ── Shuffle array in-place ──
