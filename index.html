@@ -1,820 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Name Trainer</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: system-ui, sans-serif;
-    background: #0f0f0f;
-    color: #eee;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #app {
-    text-align: center;
-    width: 100%;
-    max-width: 480px;
-    padding: 24px;
-  }
-
-  /* ── STUDY PHASE ── */
-  #study-phase h2 {
-    font-size: 14px;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 24px;
-  }
-
-  #study-face {
-    width: 240px;
-    height: 240px;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-    margin: 0 auto 20px;
-    border: 3px solid #333;
-  }
-
-  #study-name {
-    font-size: 28px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-
-  #study-progress {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 28px;
-  }
-
-  /* ── DRILL PHASE ── */
-  #drill-phase h2 {
-    font-size: 13px;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #555;
-    margin-bottom: 20px;
-  }
-
-  #drill-face {
-    width: 240px;
-    height: 240px;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-    margin: 0 auto 28px;
-    border: 3px solid #333;
-    transition: border-color .25s;
-  }
-
-  #drill-face.correct  { border-color: #22c55e; }
-  #drill-face.wrong    { border-color: #ef4444; }
-
-  #name-input {
-    width: 100%;
-    padding: 14px 18px;
-    font-size: 20px;
-    background: #1a1a1a;
-    border: 2px solid #333;
-    border-radius: 10px;
-    color: #eee;
-    text-align: center;
-    outline: none;
-    transition: border-color .2s;
-  }
-
-  #name-input:focus { border-color: #555; }
-  #name-input.correct { border-color: #22c55e; background: #0d2b18; }
-  #name-input.wrong   { border-color: #ef4444; background: #2b0d0d; }
-
-  #feedback {
-    margin-top: 14px;
-    font-size: 16px;
-    min-height: 24px;
-    transition: opacity .2s;
-  }
-
-  #feedback.correct { color: #22c55e; }
-  #feedback.wrong   { color: #ef4444; }
-
-  #bio {
-    margin-top: 18px;
-    font-size: 14px;
-    line-height: 1.55;
-    color: #bbb;
-    text-align: left;
-    background: #161616;
-    border: 1px solid #2a2a2a;
-    border-radius: 10px;
-    padding: 14px 16px;
-    white-space: pre-wrap;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-width: 0;
-    transition: max-height .35s ease, opacity .25s ease, padding .25s ease, border-width .25s ease;
-  }
-
-  #bio.show {
-    max-height: 600px;
-    opacity: 1;
-    padding-top: 14px;
-    padding-bottom: 14px;
-    border-width: 1px;
-  }
-
-  #drill-stats {
-    margin-top: 20px;
-    font-size: 13px;
-    color: #555;
-  }
-
-  /* ── PROGRESS BAR ── */
-  #progress-bar-wrap {
-    width: 100%;
-    height: 4px;
-    background: #222;
-    border-radius: 2px;
-    margin-bottom: 28px;
-    overflow: hidden;
-  }
-
-  #progress-bar {
-    height: 100%;
-    background: #22c55e;
-    border-radius: 2px;
-    transition: width .4s ease;
-  }
-
-  /* ── WIN SCREEN ── */
-  #win-phase {
-    animation: pop .4s ease;
-  }
-
-  #win-phase h1 {
-    font-size: 40px;
-    margin-bottom: 12px;
-  }
-
-  #win-phase p {
-    color: #888;
-    margin-bottom: 28px;
-    font-size: 15px;
-  }
-
-  /* ── BUTTONS ── */
-  button {
-    padding: 12px 28px;
-    font-size: 15px;
-    font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #eee;
-    color: #111;
-    transition: background .15s, transform .1s;
-  }
-
-  button:hover  { background: #fff; }
-  button:active { transform: scale(.97); }
-
-  button.secondary {
-    background: transparent;
-    color: #666;
-    border: 1px solid #333;
-    margin-left: 10px;
-  }
-
-  button.secondary:hover { background: #1a1a1a; color: #aaa; }
-
-  @keyframes pop {
-    from { transform: scale(.9); opacity: 0; }
-    to   { transform: scale(1);  opacity: 1; }
-  }
-
-  .hidden { display: none !important; }
-
-  /* ── MODE TOGGLE ── */
-  #mode-toggle {
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 12px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: #777;
-    z-index: 50;
-    user-select: none;
-  }
-  #mode-toggle .lab { transition: color .2s; }
-  #mode-toggle .lab.active { color: #eee; }
-  .switch { position: relative; display: inline-block; width: 42px; height: 22px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .slider {
-    position: absolute; cursor: pointer; inset: 0;
-    background: #333; border-radius: 22px; transition: .25s;
-  }
-  .slider::before {
-    content: ""; position: absolute; height: 16px; width: 16px;
-    left: 3px; top: 3px; background: #eee; border-radius: 50%; transition: .25s;
-  }
-  .switch input:checked + .slider { background: #6366f1; }
-  .switch input:checked + .slider::before { transform: translateX(20px); }
-
-  /* ── BIO PHASE ── */
-  #bio-phase h2 {
-    font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
-    color: #888; margin-bottom: 20px;
-  }
-  #bio-face {
-    width: 200px; height: 200px; border-radius: 50%; object-fit: cover;
-    display: block; margin: 0 auto 14px; border: 3px solid #333;
-    transition: border-color .25s;
-  }
-  #bio-face.correct { border-color: #22c55e; }
-  #bio-face.wrong   { border-color: #ef4444; }
-  #bio-name { font-size: 24px; font-weight: 600; margin-bottom: 18px; }
-  #bio-input {
-    width: 100%; min-height: 92px; padding: 12px 14px; font-size: 15px;
-    background: #1a1a1a; border: 2px solid #333; border-radius: 10px;
-    color: #eee; outline: none; resize: vertical; font-family: inherit; line-height: 1.5;
-  }
-  #bio-input:focus { border-color: #555; }
-  #bio-phase .btn-row { margin-top: 14px; display: flex; gap: 10px; justify-content: center; }
-  #bio-result {
-    margin-top: 14px; font-size: 15px; min-height: 22px; font-weight: 600;
-    line-height: 1.5;
-  }
-  #bio-result.correct { color: #22c55e; }
-  #bio-result.wrong   { color: #ef4444; }
-  #bio-result.pending { color: #888; font-weight: 400; }
-  #bio-reference {
-    margin-top: 14px; font-size: 14px; line-height: 1.55; color: #bbb;
-    text-align: left; background: #161616; border: 1px solid #2a2a2a;
-    border-radius: 10px; padding: 14px 16px; white-space: pre-wrap;
-  }
-  #bio-stats { margin-top: 18px; font-size: 13px; color: #555; }
-
-  /* ── API KEY BAR ── */
-  #apikey-bar {
-    margin-top: 24px; padding-top: 16px; border-top: 1px solid #222;
-    font-size: 12px; color: #666; text-align: left;
-  }
-  #apikey-bar input {
-    width: 100%; padding: 9px 12px; font-size: 13px; margin-top: 9px;
-    background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
-    color: #eee; outline: none;
-  }
-  #apikey-bar input:focus { border-color: #555; }
-  #apikey-bar .row { display: flex; gap: 8px; align-items: center; margin-top: 9px; }
-  #apikey-bar button { padding: 8px 16px; font-size: 13px; }
-  #apikey-bar select {
-    background: #1a1a1a; color: #eee; border: 1px solid #333;
-    border-radius: 8px; padding: 8px; font-size: 12px;
-  }
-  #apikey-status { font-size: 12px; color: #22c55e; }
-  .link { color: #6366f1; text-decoration: none; }
-  .link:hover { text-decoration: underline; }
-
+  body { text-align: center; }
+  img { width: 200px; }
+  .ok { color: green; }
+  .no { color: red; }
+  .hidden { display: none; }
 </style>
 </head>
 <body>
 
-<!-- MODE TOGGLE -->
-<div id="mode-toggle">
-  <span class="lab active" id="lab-names">Names</span>
-  <label class="switch"><input type="checkbox" id="mode-switch"><span class="slider"></span></label>
-  <span class="lab" id="lab-bios">Bios</span>
+<div id="study">
+  <p><img id="study-img" alt=""></p>
+  <h2 id="study-name"></h2>
+  <p id="study-count"></p>
+  <p><button id="next">Next</button> <button id="skip">Skip to quiz</button></p>
 </div>
 
-<div id="app">
+<div id="quiz" class="hidden">
+  <p><img id="quiz-img" alt=""></p>
+  <p><input id="answer" placeholder="Who is this?" autocomplete="off" spellcheck="false">
+     <button id="quiz-next" class="hidden">Next</button></p>
+  <p id="feedback"></p>
+  <p id="left"></p>
+</div>
 
-  <!-- STUDY PHASE -->
-  <div id="study-phase">
-    <h2 id="study-heading">Learn each face</h2>
-    <img id="study-face" src="" alt="">
-    <div id="study-name"></div>
-    <div id="study-progress"></div>
-    <button id="study-next-btn">Next</button>
-    <button id="study-skip-btn" class="secondary">Skip to drill</button>
-  </div>
+<div id="pass" class="hidden">
+  <h2 id="pass-score"></h2>
+  <p><button id="pass-next">Again</button> or press Enter</p>
+</div>
 
-  <!-- DRILL PHASE -->
-  <div id="drill-phase" class="hidden">
-    <h2>Type the name</h2>
-    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
-    <img id="drill-face" src="" alt="">
-    <input id="name-input" type="text" placeholder="First name…" autocomplete="off" spellcheck="false">
-    <div id="feedback"></div>
-    <div id="bio"></div>
-    <div id="drill-stats"></div>
-  </div>
-
-  <!-- WIN SCREEN -->
-  <div id="win-phase" class="hidden">
-    <h1>Perfect!</h1>
-    <p id="win-stats"></p>
-    <button id="restart-btn">Train again</button>
-  </div>
-
-  <!-- BIO PHASE -->
-  <div id="bio-phase" class="hidden">
-    <h2>What does this person do?</h2>
-    <img id="bio-face" src="" alt="">
-    <div id="bio-name"></div>
-    <textarea id="bio-input" placeholder="Type what you remember — their work, field, affiliation…" spellcheck="false"></textarea>
-    <div class="btn-row">
-      <button id="bio-submit">Check answer</button>
-      <button id="bio-next" class="secondary hidden">Next →</button>
-    </div>
-    <div id="bio-result"></div>
-    <div id="bio-reference" class="hidden"></div>
-    <div id="bio-stats"></div>
-
-    <div id="apikey-bar">
-      <div>Grading uses <a class="link" href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a>. Your key stays in this browser only (localStorage).</div>
-      <input id="apikey-input" type="password" placeholder="OpenRouter API key (sk-or-…)" autocomplete="off">
-      <div class="row">
-        <select id="model-select">
-          <option value="openai/gpt-5.4-nano">gpt-5.4-nano · cheapest</option>
-          <option value="openai/gpt-5.4-mini">gpt-5.4-mini</option>
-        </select>
-        <button id="apikey-save">Save key</button>
-        <span id="apikey-status"></span>
-      </div>
-    </div>
-  </div>
-
+<div id="done" class="hidden">
+  <h2 id="done-score"></h2>
+  <p><button id="again">Again</button> or press Enter</p>
 </div>
 
 <script src="people.js"></script>
 <script>
-// People + photos come from people.js (window.PEOPLE). See AGENTS.md.
+const people = window.PEOPLE || [];
+if (window.TRAINER_TITLE) document.title = window.TRAINER_TITLE;
+if (!people.length) document.body.innerHTML = '<p>No people — edit <code>people.js</code>.</p>';
 
-const PEOPLE = (window.PEOPLE || []);
-
-// Optional config from people.js: window.TRAINER_TITLE
-if (window.TRAINER_TITLE) {
-  document.title = window.TRAINER_TITLE;
-}
-
-// Friendly empty state so the page never just silently breaks.
-if (!PEOPLE.length) {
-  document.getElementById('app').innerHTML =
-    '<div style="max-width:540px;margin:0 auto;text-align:center;color:#888">' +
-    '<h2 style="color:#eee;margin-bottom:10px">No people loaded</h2>' +
-    '<p style="line-height:1.6">Edit <code>people.js</code> to add people and drop their ' +
-    'photos in <code>faces/</code>, then reload.<br>See <code>AGENTS.md</code> for the format.</p></div>';
-  throw new Error('name-trainer: no PEOPLE defined');
-}
-if (window.TRAINER_TITLE) {
-  var _sh = document.getElementById('study-heading');
-  if (_sh) _sh.textContent = window.TRAINER_TITLE + ' — learn each face';
-}
-// ─────────────────────────────────────────────
-
-// ── Name matching: diacritic-folding + typo-tolerant ──
-// Fold accents, lowercase, turn punctuation/apostrophes/hyphens into spaces.
-// "Wyatt Tessari L'Allié" -> "wyatt tessari l allie"
-function fold(s) {
-  return s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')   // strip combining accent marks
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')       // any punctuation/symbol -> space
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-// Levenshtein edit distance.
-function lev(a, b) {
-  const m = a.length, n = b.length;
-  if (!m) return n;
-  if (!n) return m;
-  let prev = Array.from({ length: n + 1 }, (_, i) => i);
-  for (let i = 1; i <= m; i++) {
-    const cur = [i];
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
-    }
-    prev = cur;
-  }
-  return prev[n];
-}
-
-// Allowed typos scale with length; very short tokens must be exact.
-function withinTypo(a, b) {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  if (Math.min(a.length, b.length) < 3) return false; // no fuzzy on tiny tokens
-  const len = Math.max(a.length, b.length);
-  const tol = len <= 5 ? 1 : len <= 9 ? 2 : 3;
-  return lev(a, b) <= tol;
-}
-
-// Accept the typed answer if it matches the full name, the first or last name,
-// or first+last (ignoring middles) — each comparison both as-typed and with all
-// spaces removed (so "Zhi jing" == "Zhijing"), with typo tolerance throughout.
-function isCorrect(typed, fullName) {
-  const t = fold(typed);
-  if (!t) return false;
-  const f = fold(fullName);
-  if (!f) return false;
-
-  const tJoin = t.replace(/ /g, '');
-  const matches = (cand) => withinTypo(t, cand) || withinTypo(tJoin, cand.replace(/ /g, ''));
-
-  if (matches(f)) return true;                       // whole name
-  const parts = f.split(' ').filter(Boolean);
-  if (parts.some(matches)) return true;              // any single part (first/last/middle)
-  if (parts.length >= 2 && matches(parts[0] + ' ' + parts[parts.length - 1])) return true; // first+last
-  return false;
-}
-
-// ── Shuffle array in-place ──
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
+const $ = id => document.getElementById(id);
+const shuffle = a => {
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return arr;
+  return a;
+};
+
+// lowercase, strip accents and punctuation
+const fold = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// accept the full name or any single part of it (first, last, ...)
+const matches = (typed, name) => {
+  const t = fold(typed), f = fold(name);
+  return t && (t === f || f.split(' ').includes(t));
+};
+
+// ── Study: flip through every face + name ──
+let i = 0;
+const order = shuffle([...people]);
+function study() {
+  $('study-img').src = order[i].img;
+  $('study-name').textContent = order[i].name;
+  $('study-count').textContent = (i + 1) + ' / ' + order.length;
 }
+$('next').onclick = () => { if (++i < order.length) study(); else startQuiz(); };
+$('skip').onclick = startQuiz;
+if (people.length) study();
 
-// ─────────────────────────────────────────────
-//  STUDY PHASE
-// ─────────────────────────────────────────────
-let studyIndex = 0;
-const studyOrder = shuffle([...PEOPLE]);
-
-const studyPhase    = document.getElementById('study-phase');
-const studyFace     = document.getElementById('study-face');
-const studyName     = document.getElementById('study-name');
-const studyProgress = document.getElementById('study-progress');
-const studyNextBtn  = document.getElementById('study-next-btn');
-const studySkipBtn  = document.getElementById('study-skip-btn');
-
-function showStudyCard() {
-  const p = studyOrder[studyIndex];
-  studyFace.src = p.img;
-  studyName.textContent = p.name;
-  studyProgress.textContent = `${studyIndex + 1} / ${studyOrder.length}`;
-  studyNextBtn.textContent = studyIndex < studyOrder.length - 1 ? 'Next' : 'Start drilling';
+// ── Quiz: type each name; a pass ends when the queue is empty ──
+let queue, missed, current, showing;
+function startQuiz() {
+  $('study').classList.add('hidden');
+  $('pass').classList.add('hidden');
+  $('done').classList.add('hidden');
+  $('quiz').classList.remove('hidden');
+  queue = shuffle([...people]);
+  missed = new Set();
+  ask();
 }
-
-studyNextBtn.addEventListener('click', () => {
-  if (studyIndex < studyOrder.length - 1) {
-    studyIndex++;
-    showStudyCard();
+function endPass() {
+  $('quiz').classList.add('hidden');
+  const right = people.length - missed.size;
+  if (!missed.size) {
+    $('done-score').textContent = 'Perfect — all ' + people.length + ' right!';
+    $('done').classList.remove('hidden');
   } else {
-    startDrill();
+    $('pass-score').textContent = 'You got ' + right + ' / ' + people.length;
+    $('pass').classList.remove('hidden');
   }
-});
-
-studySkipBtn.addEventListener('click', startDrill);
-
-showStudyCard();
-
-// ─────────────────────────────────────────────
-//  DRILL PHASE
-// ─────────────────────────────────────────────
-const drillPhase  = document.getElementById('drill-phase');
-const drillFace   = document.getElementById('drill-face');
-const nameInput   = document.getElementById('name-input');
-const feedback    = document.getElementById('feedback');
-const bioBox      = document.getElementById('bio');
-const drillStats  = document.getElementById('drill-stats');
-const progressBar = document.getElementById('progress-bar');
-
-// State
-let queue = [];           // cards still to answer this pass
-let mastered = new Set(); // indices of people answered correctly THIS pass
-let wrongThisPass = 0;
-let totalAttempts = 0;
-let currentPerson = null;
-let locked = false;       // brief lock after feedback shown
-
-function buildQueue() {
-  // Full shuffle of all people
-  queue = shuffle(PEOPLE.map((p, i) => ({ ...p, idx: i })));
-  mastered.clear();
-  wrongThisPass = 0;
 }
-
-function startDrill() {
-  studyPhase.classList.add('hidden');
-  drillPhase.classList.remove('hidden');
-  buildQueue();
-  nextCard();
-  nameInput.focus();
+function ask() {
+  if (!queue.length) return endPass();
+  current = queue.shift();
+  showing = false;
+  $('quiz-img').src = current.img;
+  $('answer').value = '';
+  $('feedback').textContent = '';
+  $('quiz-next').classList.add('hidden');
+  $('left').textContent = (queue.length + 1) + ' left this pass';
+  $('answer').focus();
 }
-
-function nextCard() {
-  if (queue.length === 0) {
-    // End of pass — check if perfect
-    if (wrongThisPass === 0) {
-      showWin();
-      return;
-    }
-    // Not perfect: rebuild queue from non-mastered people (i.e. everyone, reset mastered)
-    buildQueue();
-  }
-  currentPerson = queue.shift();
-  drillFace.src = currentPerson.img;
-  drillFace.className = '';
-  nameInput.value = '';
-  nameInput.className = '';
-  nameInput.disabled = false;
-  feedback.textContent = '';
-  feedback.className = '';
-  bioBox.textContent = '';
-  bioBox.classList.remove('show');
-  locked = false;
-  nameInput.focus();
-  updateStats();
-}
-
-function updateStats() {
-  const remaining = queue.length + 1; // +1 for current
-  const total     = PEOPLE.length;
-  const pct       = Math.round(((total - remaining) / total) * 100);
-  progressBar.style.width = pct + '%';
-
-  const passWrong = wrongThisPass;
-  drillStats.textContent = passWrong === 0
-    ? `Pass in progress — ${remaining} left`
-    : `${passWrong} mistake${passWrong > 1 ? 's' : ''} this pass — ${remaining} left`;
-}
-
-nameInput.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  if (locked) { nextCard(); return; }
-
-  const typed = nameInput.value;
-  if (!typed.trim()) return;
-
-  totalAttempts++;
-
-  if (isCorrect(typed, currentPerson.name)) {
-    // Correct
-    drillFace.classList.add('correct');
-    nameInput.classList.add('correct');
-    feedback.textContent = '✓ ' + currentPerson.name;
-    feedback.className = 'correct';
-    mastered.add(currentPerson.idx);
-    locked = true;
-    // Show bio if available, then wait for Enter to continue
-    if (currentPerson.bio) {
-      bioBox.textContent = currentPerson.bio;
-      bioBox.classList.add('show');
-      feedback.textContent = '✓ ' + currentPerson.name + '  ·  press Enter to continue';
-      nameInput.focus();
-    } else {
-      setTimeout(nextCard, 600);
-    }
+function check() {
+  const typed = $('answer').value.trim();
+  if (!typed) return;
+  showing = true;
+  if (matches(typed, current.name)) {
+    $('feedback').textContent = '✅ ' + current.name;
+    $('feedback').className = 'ok';
   } else {
-    // Wrong — show correct name, re-insert card soon (2-3 cards away)
-    drillFace.classList.add('wrong');
-    nameInput.classList.add('wrong');
-    feedback.textContent = currentPerson.name;
-    feedback.className = 'wrong';
-    wrongThisPass++;
-
-    // Re-insert at a random position 2–4 slots ahead (or end if queue is short)
-    const insertAt = Math.min(2 + Math.floor(Math.random() * 3), queue.length);
-    queue.splice(insertAt, 0, { ...currentPerson });
-
-    locked = true;
-    updateStats();
-    setTimeout(() => {
-      nameInput.value = '';
-      nameInput.className = '';
-      // Keep feedback visible a bit longer so they can read the name
-    }, 400);
-    setTimeout(nextCard, 1800);
+    missed.add(current.name);
+    queue.splice(Math.min(2, queue.length), 0, current); // ask again soon
+    $('feedback').innerHTML = '❌ ';
+    const b = document.createElement('b');
+    b.textContent = current.name;
+    $('feedback').appendChild(b);
+    $('feedback').className = 'no';
   }
+  $('quiz-next').classList.remove('hidden');
+}
+$('answer').addEventListener('keydown', e => {
+  if (e.key === 'Enter') showing ? ask() : check();
 });
-
-// ─────────────────────────────────────────────
-//  WIN SCREEN
-// ─────────────────────────────────────────────
-const winPhase   = document.getElementById('win-phase');
-const winStats   = document.getElementById('win-stats');
-const restartBtn = document.getElementById('restart-btn');
-
-function showWin() {
-  drillPhase.classList.add('hidden');
-  winPhase.classList.remove('hidden');
-  const accuracy = Math.round((PEOPLE.length / totalAttempts) * 100);
-  winStats.textContent = `${totalAttempts} attempts · ${accuracy}% accuracy`;
-}
-
-restartBtn.addEventListener('click', () => {
-  winPhase.classList.add('hidden');
-  studyIndex = 0;
-  shuffle(studyOrder);
-  studyPhase.classList.remove('hidden');
-  totalAttempts = 0;
-  showStudyCard();
-});
-
-// ─────────────────────────────────────────────
-//  MODE TOGGLE  (Names ⇄ Bios)
-// ─────────────────────────────────────────────
-const modeSwitch = document.getElementById('mode-switch');
-const labNames   = document.getElementById('lab-names');
-const labBios    = document.getElementById('lab-bios');
-const bioPhase   = document.getElementById('bio-phase');
-
-modeSwitch.addEventListener('change', () => {
-  if (modeSwitch.checked) enterBioMode();
-  else enterNameMode();
-});
-
-function enterNameMode() {
-  labNames.classList.add('active');
-  labBios.classList.remove('active');
-  bioPhase.classList.add('hidden');
-  drillPhase.classList.add('hidden');
-  winPhase.classList.add('hidden');
-  studyPhase.classList.remove('hidden');
-  studyIndex = 0;
-  shuffle(studyOrder);
-  showStudyCard();
-}
-
-function enterBioMode() {
-  labBios.classList.add('active');
-  labNames.classList.remove('active');
-  studyPhase.classList.add('hidden');
-  drillPhase.classList.add('hidden');
-  winPhase.classList.add('hidden');
-  bioPhase.classList.remove('hidden');
-  startBioRound();
-}
-
-// ─────────────────────────────────────────────
-//  BIO MODE
-// ─────────────────────────────────────────────
-const LS_KEY = 'nt_openrouter_key', LS_MODEL = 'nt_openrouter_model';
-
-const apikeyInput  = document.getElementById('apikey-input');
-const apikeySave   = document.getElementById('apikey-save');
-const apikeyStatus = document.getElementById('apikey-status');
-const modelSelect  = document.getElementById('model-select');
-
-(function initKey() {
-  const k = localStorage.getItem(LS_KEY);
-  if (k) { apikeyInput.value = k; apikeyStatus.textContent = '✓ saved'; }
-  const m = localStorage.getItem(LS_MODEL);
-  if (m) modelSelect.value = m;
-})();
-
-apikeySave.addEventListener('click', () => {
-  localStorage.setItem(LS_KEY, apikeyInput.value.trim());
-  localStorage.setItem(LS_MODEL, modelSelect.value);
-  apikeyStatus.textContent = apikeyInput.value.trim() ? '✓ saved' : '';
-});
-modelSelect.addEventListener('change', () => localStorage.setItem(LS_MODEL, modelSelect.value));
-
-const bioFace   = document.getElementById('bio-face');
-const bioName   = document.getElementById('bio-name');
-const bioInput  = document.getElementById('bio-input');
-const bioSubmit = document.getElementById('bio-submit');
-const bioNext   = document.getElementById('bio-next');
-const bioResult = document.getElementById('bio-result');
-const bioRef    = document.getElementById('bio-reference');
-const bioStats  = document.getElementById('bio-stats');
-
-let bioQueue = [], bioCurrent = null, bioCorrect = 0, bioTotal = 0;
-
-// Only quiz people who actually have a bio to grade against.
-function bioPool() {
-  return PEOPLE.filter(p => (p.bio || '').trim().length > 0).map(p => ({ ...p }));
-}
-
-function startBioRound() {
-  bioQueue = shuffle(bioPool());
-  bioCorrect = 0; bioTotal = 0;
-  nextBioCard();
-}
-
-function nextBioCard() {
-  if (bioQueue.length === 0) bioQueue = shuffle(bioPool());
-  bioCurrent = bioQueue.shift();
-  bioFace.src = bioCurrent.img;
-  bioFace.className = '';
-  bioName.textContent = bioCurrent.name;
-  bioInput.value = '';
-  bioInput.disabled = false;
-  bioResult.textContent = '';
-  bioResult.className = '';
-  bioRef.classList.add('hidden');
-  bioRef.textContent = '';
-  bioNext.classList.add('hidden');
-  bioSubmit.classList.remove('hidden');
-  bioSubmit.disabled = false;
-  updateBioStats();
-  bioInput.focus();
-}
-
-function updateBioStats() {
-  bioStats.textContent = bioTotal
-    ? `${bioCorrect}/${bioTotal} correct this round`
-    : 'Type from memory, then check.';
-}
-
-async function scoreBio() {
-  const key = (localStorage.getItem(LS_KEY) || apikeyInput.value).trim();
-  if (!key) {
-    bioResult.textContent = 'Paste your OpenRouter API key below first.';
-    bioResult.className = 'wrong';
-    apikeyInput.focus();
-    return;
-  }
-  const answer = bioInput.value.trim();
-  if (!answer) { bioInput.focus(); return; }
-
-  bioSubmit.disabled = true;
-  bioInput.disabled = true;
-  bioResult.textContent = 'Scoring…';
-  bioResult.className = 'pending';
-
-  const model = modelSelect.value || 'openai/gpt-5.4-nano';
-  const sys = "You grade a memory flashcard about a person. You get a REFERENCE describing what the person does (their work, field, studies, and affiliations) and the LEARNER'S ANSWER recalling it. Mark correct if the learner captured the gist of what this person does or where they work/study — be lenient about wording, spelling, missing minor details, and partial recall. Mark incorrect if the answer is blank, too vague to identify the work, or factually wrong about their work/affiliation. Reply with ONLY compact JSON: {\"correct\": true|false, \"feedback\": \"<=14 words\"}.";
-  const usr = `REFERENCE (about ${bioCurrent.name}):\n${bioCurrent.bio}\n\nLEARNER'S ANSWER:\n${answer}`;
-
-  try {
-    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + key,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': location.href,
-        'X-Title': 'TL Name Trainer'
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        messages: [{ role: 'system', content: sys }, { role: 'user', content: usr }]
-      })
-    });
-    if (!resp.ok) {
-      const t = await resp.text();
-      throw new Error(resp.status + ' ' + t.slice(0, 140));
-    }
-    const data = await resp.json();
-    const content = data.choices && data.choices[0] && data.choices[0].message
-      ? data.choices[0].message.content : '';
-    const m = content.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(m ? m[0] : content);
-    showBioVerdict(!!parsed.correct, parsed.feedback || '');
-  } catch (e) {
-    bioResult.textContent = 'Scoring error: ' + e.message;
-    bioResult.className = 'wrong';
-    bioSubmit.disabled = false;
-    bioInput.disabled = false;
-    bioInput.focus();
-  }
-}
-
-function showBioVerdict(correct, feedback) {
-  bioTotal++;
-  if (correct) bioCorrect++;
-  bioFace.classList.add(correct ? 'correct' : 'wrong');
-  bioResult.textContent = (correct ? '✓ Correct' : '✗ Not quite') + (feedback ? ' — ' + feedback : '');
-  bioResult.className = correct ? 'correct' : 'wrong';
-  bioRef.textContent = bioCurrent.bio;
-  bioRef.classList.remove('hidden');
-  bioSubmit.classList.add('hidden');
-  bioNext.classList.remove('hidden');
-  updateBioStats();
-  bioNext.focus();
-}
-
-bioSubmit.addEventListener('click', scoreBio);
-bioNext.addEventListener('click', nextBioCard);
-
-// Enter submits / advances; Shift+Enter inserts a newline.
-bioInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    if (!bioSubmit.classList.contains('hidden')) scoreBio();
-    else nextBioCard();
-  }
+$('quiz-next').onclick = ask;
+$('pass-next').onclick = startQuiz;
+$('again').onclick = startQuiz;
+// Enter starts a new round from the score screens
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target === $('answer')) return;
+  if (!$('pass').classList.contains('hidden') || !$('done').classList.contains('hidden')) startQuiz();
 });
 </script>
 </body>
